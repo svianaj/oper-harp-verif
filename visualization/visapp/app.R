@@ -274,7 +274,9 @@ all_stations             <- list("All stations"      = "All",
                                  "Germany Synop"     = "GermanySynop",
                                  "Alps"              = "Alps",
                                  "Spain Synop"       = "SpainSynop",
-                                 "Switzerland Synop" = "SwitzerlandSynop"
+                                 "Switzerland Synop" = "SwitzerlandSynop",
+				 "WOW"               = "WOWSynop",
+				 "Standard"          = "StandardSynop"
 ) 
 # Corresponding coastal and inland display names. Elevations above/greater
 # than threshold will appear but will not have a nice display name.

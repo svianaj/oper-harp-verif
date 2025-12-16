@@ -769,7 +769,7 @@ create_station_filter <- function(dttm,
     }
   }
   if (!is.na(model_domain_min)) {
-    cat("Model",model_domain_min,"has the fewest number of stations\n")
+    cat("Model",model_domain_min,"has the fewest number of stations: ",toString(num_sids_running),". \n")
   }
   return(model_domain_min)
 }
@@ -1119,7 +1119,7 @@ try_rpobs <- function(fcst,
       cat("Finished obs reading\n")
     }
   )
-  
+  obs$SID <- as.double(obs$SID)
   return(obs)
   
 }

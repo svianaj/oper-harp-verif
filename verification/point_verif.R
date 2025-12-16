@@ -267,7 +267,7 @@ num_days <- as.numeric(difftime(harpCore::as_dttm(end_date),
 all_possible_UA_vars <- c("Z","T","RH","D","S","Q","Td")
 
 # Generate the the stationlists (not required, should be done offline)
-gen_station_lists <- FALSE
+gen_station_lists <- TRUE
 YYYY              <- substr(end_date,0,4)
 sql_file          <- file.path(obs_path,
                                paste0("OBSTABLE_",YYYY,".sqlite"))
@@ -665,7 +665,8 @@ run_verif <- function(prm_info, prm_name) {
              prm_info$scale_obs)
     )
   }
-  
+  #obs  <- obs %>% mutate_list(SID = as.double(SID)) #Convert SID column 
+                    #from integer to double to protect against integer64
   fcst <- harpCore::join_to_fcst(fcst, obs)
   fcst <- switch(
     vertical_coordinate,
@@ -1028,7 +1029,31 @@ run_verif <- function(prm_info, prm_name) {
 # CALL VERIF FUNCTION OVER ALL PARAMS
 #================================================#
 
-verif <- purrr::imap(params, run_verif)
+#verif <- purrr::imap(params, run_verif)
+
+# 1. Create a "safe" version of run_verif that never throws an error
+safe_run_verif <- safely(run_verif)
+
+# 2. Apply the safe function to each parameter using imap()
+#    safe_results[[i]] will be a list with elements "result" and "error"
+safe_results <- imap(params, ~ safe_run_verif(.x, .y))
+
+# 3. Extract successful results and errors into separate lists
+#    If run_verif succeeded, result is the actual output and error is NULL; 
+#    if it failed, result is NULL and error contains the error object.
+verif  <- map(safe_results, "result")
+errors <- map(safe_results, "error")
+
+# 4. Identify which parameters failed (non-NULL errors) and record their messages
+failed_idx <- which(map_lgl(errors, ~ !is.null(.x)))
+error_log <- tibble::tibble(
+  param   = names(params)[failed_idx],               # parameter name or index
+  message = map_chr(errors[failed_idx], ~ .x$message)
+)
+
+# Print or save the error log for later inspection
+print(error_log)
+
 
 # Check if any NAs exist in the verif output due to missing data
 sc_data_exists <- FALSE

@@ -29,7 +29,7 @@ params <- list(
       models_to_scale = NULL
     ),
     Td2m = list(
-      thresholds = c(-20, -10, seq(-5, 25, 5)),
+      thresholds = c(-20, -10, seq(-5, 30, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 30,
@@ -37,7 +37,7 @@ params <- list(
       error_sd   = 6
     ),
     Tmin = list(
-      thresholds = c(-20, -10, seq(-5, 25, 5)),
+      thresholds = c(seq(-15, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 30,
@@ -45,7 +45,7 @@ params <- list(
       error_sd   = 6
     ),
     Tmax = list(
-      thresholds = c(-20, -10, seq(-5, 25, 5)),
+      thresholds = c(seq(0, 40, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 30,
@@ -68,19 +68,25 @@ params <- list(
       error_sd   = 6
     ),
     Pmsl = list(
-      thresholds = NULL,
+      thresholds = c(seq(920, 1040, 20)),
+      scale_fcst = list(scaling =0.01, new_units = "hPa", mult= TRUE),
       obsmin_val = 90000/100,
       obsmax_val = 106000/100,
-      error_sd   = 6
+      error_sd   = 6,
+      use_models_to_scale = FALSE
     ),
     Ps = list(
-      thresholds = NULL,
-      obsmin_val = 60000/100,
-      obsmax_val = 110000/100,
-      error_sd   = 6
+      thresholds = c(seq(920, 1040, 20)),
+      scale_fcst = list(scaling =0.01, new_units = "hPa", mult= TRUE),
+      obsmin_val = 90000/100,
+      obsmax_val = 106000/100,
+      error_sd   = 6,
+      use_models_to_scale = FALSE
     ),
     S10m = list(
       thresholds = c(2.5,5,7.5,10,15,20,25,30),
+      scale_fcst = list(scaling = 0.0, new_units = "m/s"),
+      scale_obs  = list(scaling = 0.0, new_units = "m/s"),
       obsmin_val = 0,
       obsmax_val = 100,
       error_sd   = 6
@@ -92,6 +98,7 @@ params <- list(
       error_sd   = 6
     ),
     D10m = list(
+      scale_fcst = list(scaling = 0, new_units = "degrees"),		
       thresholds = NULL,
       obsmin_val = 0,
       obmax_val  = 360,
@@ -105,91 +112,122 @@ params <- list(
     ),
     Gmax = list(
       thresholds = c(2.5,5,7.5,10,15,20,25,30,35,40),
+      scale_fcst = list(scaling = 0.0, new_units = "m/s"),
+      scale_obs  = list(scaling = 0.0, new_units = "m/s"),
       obsmin_val = 0,
       obsmax_val = 100,
       error_sd   = 6
     ),
     AccPcp1h = list(
+      thresholds = c(1,2.5,5,7.5),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
+      obsmin_val = 0,
+      obsmax_val = 1000,
+      error_sd   = 8
+    ),
+    Pcp = list(
       thresholds = c(0.1,0.5,1,2.5,5,7.5,10,15,20),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
       obsmin_val = 0,
       obsmax_val = 1000,
       error_sd   = 8
     ),
     AccPcp3h = list(
       thresholds = c(0.1,0.5,1,2.5,5,7.5,10,15,20,25,30,40),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
       obsmin_val = 0,
       obsmax_val = 1000,
       error_sd   = 8
     ),
     AccPcp6h = list(
       thresholds = c(0.1,0.5,1,2.5,5,7.5,10,15,20,25,30,40,50,60),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
       obsmin_val = 0,
       obsmax_val = 1000,
       error_sd   = 8
     ),
     AccPcp12h = list(
       thresholds = c(0.1,0.5,1,2.5,5,7.5,10,15,20,25,30,40,50,60,70,80),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
       obsmin_val = 0,
       obsmax_val = 1000,
       error_sd   = 8
     ),
     AccPcp24h = list(
       thresholds = c(0.1,0.5,1,2.5,5,7.5,10,15,20,25,30,40,50,60,70,80,90,100),
+      scale_fcst = list(scaling = 0.0, new_units = "kg/m^2"),
+      scale_obs  = list(scaling = 0.0, new_units = "kg/m^2"),
       obsmin_val = 0,
       obsmax_val = 1000,
       error_sd   = 8
     ),
     CCtot = list(
-      thresholds = seq(0.5,7.5,1),
+      thresholds = seq(0, 100, 20),
+      scale_obs = list(scaling = 12.5, new_units = "%", mult= TRUE),
+      scale_fcst = list(scaling = 100.0, new_units = "%", mult= TRUE),
+      #models_to_scale=c("GDT_iekm","IFS"),
+      models_to_scale=c("IFSENS"),
       obsmin_val = 0,
       obsmax_val = 8,
       error_sd   = 6
     ),
     CClow = list(
-      thresholds = seq(0.5,7.5,1),
+      thresholds = seq(0, 100, 20),
+      scale_obs = list(scaling = 12.5, new_units = "%", mult= TRUE),
+      scale_fcst = list(scaling = 100, new_units = "%", mult= TRUE),
       obsmin_val = 0,
       obsmax_val = 8,
       error_sd   = 6
     ),
     CCmed = list(
-      thresholds = seq(0.5,7.5,1),
+      thresholds = seq(0, 100, 20),
+      scale_obs = list(scaling = 12.5, new_units = "%", mult= TRUE),
+      scale_fcst = list(scaling = 100, new_units = "%", mult= TRUE),
       obsmin_val = 0,
       obsmax_val = 8,
       error_sd   = 6
     ),
     CChigh = list(
-      thresholds = seq(0.5,7.5,1),
+      thresholds = seq(0, 100, 20),
+      scale_obs = list(scaling = 12.5, new_units = "%", mult= TRUE),
+      scale_fcst = list(scaling = 100, new_units = "%", mult= TRUE),
       obsmin_val = 0,
       obsmax_val = 8,
       error_sd   = 6
     ),
     N75 = list(
-      thresholds = seq(0.5,7.5,1),
+      thresholds = seq(0, 100, 20),
+      scale_obs = list(scaling = 12.5, new_units = "%", mult= TRUE),
       obsmin_val = 0,
       obsmax_val = 8,
       error_sd   = 6
     ),
     Cbase = list(
-      thresholds = c(100,500,1000,1500,2000,3000,5000,7000,10000,15000,20000),
+      thresholds = c(100,300,1000,2000,3000,5000),
       scale_fcst = list(scaling = 3.281, new_units = "ft", mult = TRUE),
       scale_obs  = list(scaling = 3.281, new_units = "ft", mult = TRUE),
       error_sd   = 6,
       obsmin_val = 0,
-      obsmax_val = 24000/3.281, # As filtering is done before scaling
-      fctmax_val = 24000 # Done after scaling (note Harmonie Cbase limited to 7500m)
+      obsmax_val = 24000,
+      fctmax_val = 24000
     ),
     vis = list(
-      thresholds = c(1000,2000,3000,4000,5000,7500,10000,15000,20000,25000,30000,40000),
-      error_sd   = 6,
-      obsmin_val = 0,
-      obsmax_val = 45000,
-      fctmax_val = 45000 # Note Harmonie vis limited to 50km
+      thresholds = c(200,500,1000,4000),
+      error_sd   = 6
     ),
     # Upper-air parameters
     S = list(
+      scale_fcst = list(scaling = 0.0, new_units = "m/s"),
+      scale_obs  = list(scaling = 0.0, new_units = "m/s"),
       vc         = "pressure"
     ),
     D = list(
+       scale_fcst = list(scaling = 0, new_units = "degrees"),
        vc         = "pressure"
     ),
     Td = list(
@@ -203,6 +241,9 @@ params <- list(
       vc         = "pressure"
     ),
     RH = list(
+      scale_fcst = list(scaling = 1, new_units = "%", mult = TRUE),
+      scale_obs  = list(scaling = 1, new_units = "%", mult = TRUE),
+	      
       vc         = "pressure"
     ),
     Z = list(
