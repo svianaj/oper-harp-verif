@@ -152,6 +152,7 @@ if (!interactive()) {
   use_fixed_dates    <- args$use_fixed_dates
   skip_sid_verif     <- args$skip_sid_verif
   skip_thresh_verif  <- args$skip_thresh_verif
+#  skip_thresh_verif  <- TRUE
 
 } else {
   
@@ -329,7 +330,7 @@ if (params_list == "ALL") {
 
 # Make the grps for different verification types
 grps_surface_default   <- harpCore::make_verif_groups(c("lead_time",
-                     "valid_hour","valid_dttm"),c("fcst_cycle","station_group"))
+                     "valid_hour","valid_dttm"),c("fcst_cycle","station_group","month"))
 grps_UA_default        <- harpCore::make_verif_groups(c("lead_time",
                      "valid_hour"),c("fcst_cycle","station_group"))
 grps_SID_default       <- list("SID",c("SID","valid_hour"))
@@ -698,6 +699,8 @@ run_verif <- function(prm_info, prm_name) {
   fcst <- harpCore::expand_date(fcst,valid_dttm)
   fcst <- harpPoint::mutate_list(fcst,
                                  valid_hour = sprintf("%02d",valid_hour))
+  fcst <- harpPoint::mutate_list(fcst,
+                                 month = sprintf("%02d",valid_month))
   
   # If UA variable, restrict to main valid hours i.e. 00, 06, 12, 18 Z
   if (!is.na(vertical_coordinate)) {

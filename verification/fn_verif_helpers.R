@@ -421,12 +421,13 @@ fn_run_verif_groups <- function(fcst = "",
                groupings  = grps_threshold),
           verif_options_list_nm)
       ) %>% fn_verif_rename(.,par_unit)
-      
+      cat("test print ....\n")      
+      print(names(verif_toplot[[t_s_str]]))
       if (!is.null(verif_alllt[[t_s_str]])) {
         verif_alllt[[t_s_str]] <- dplyr::mutate(verif_alllt[[t_s_str]],
                                                 lead_time  = "All",
                                                 valid_hour = "All",
-                                                valid_dttm = "All") %>%
+                                                valid_dttm = "All",month = "All") %>%
           dplyr::select(names(verif_toplot[[t_s_str]]))
         cat("Adding threshold scores over all lead_times\n")
         verif_toplot[[t_s_str]] <- dplyr::bind_rows(verif_toplot[[t_s_str]],
