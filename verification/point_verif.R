@@ -667,7 +667,7 @@ run_verif <- function(prm_info, prm_name) {
   }
   #obs  <- obs %>% mutate_list(SID = as.double(SID)) #Convert SID column 
                     #from integer to double to protect against integer64
-  fcst <- harpCore::join_to_fcst(fcst, obs)
+  fcst <- harpCore::join_to_fcst(fcst, obs, force=TRUE)
   fcst <- switch(
     vertical_coordinate,
     "pressure" = harpCore::common_cases(fcst, p),
@@ -1035,7 +1035,7 @@ run_verif <- function(prm_info, prm_name) {
 safe_run_verif <- safely(run_verif)
 
 # 2. Apply the safe function to each parameter using imap()
-#    safe_results[[i]] will be a list with elements "result" and "error"
+#   , then safe_results[[i]] will be a list with elements "result" and "error"
 safe_results <- imap(params, ~ safe_run_verif(.x, .y))
 
 # 3. Extract successful results and errors into separate lists

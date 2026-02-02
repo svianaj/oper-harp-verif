@@ -1200,7 +1200,7 @@ fcst_qc <- function(fcst,
     min_num_stations <- stats::quantile(station_count$n,
                                         probs = .01,
                                         names = FALSE)
-    min_num_stations <- max(min_num_stations,num_days)
+    min_num_stations <- min(min_num_stations,num_days)
     
     sids_filter      <- station_count$SID[station_count$n >= min_num_stations]
     sids_removed     <- station_count$SID[station_count$n < min_num_stations]

@@ -2056,8 +2056,7 @@ get_param_classes <- function(param,par_unit,score = "freq") {
     } else {
       brks <- c(seq(0,10,2),12.5,15,17.5,20,25,30,35)
     }
-    
-    if (par_unit %in% c("kg/m^2","kg m-2")) {
+    if (any(par_unit %in% c("kg/m^2", "kg m-2"))) {
       scale_fac   <- 1
       scale_mult  <- T
       scale_round <- 0
