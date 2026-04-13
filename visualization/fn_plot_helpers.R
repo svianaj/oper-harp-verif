@@ -16,8 +16,12 @@ numbers_only <- function(x) !grepl("\\D", x)
 fn_get_n_stations <- function(n_stations,station_group_var,station,cycle,vhour){
 
   n_out <- NULL
-  if (!is.null(n_stations)) {
+  # Add a check that the value for station exists in n_stations. Avoids unnecessary
+  # warning messages which are not necessarily useful (as "All" can appear in
+  # station_group as a result of fn_check_verif, but this is not actually an error)
+  if ((!is.null(n_stations)) && (station %in% unique(n_stations[[station_group_var]]))) {
     if (all(c(station_group_var,"fcst_cycle","valid_hour") %in% names(n_stations))) {
+      
       ns_val <- n_stations %>% filter(get(station_group_var) == station,
                                       fcst_cycle == cycle,
                                       valid_hour == vhour)
@@ -25,7 +29,7 @@ fn_get_n_stations <- function(n_stations,station_group_var,station,cycle,vhour){
       if (length(ns_val == 1)) {
         n_out <- ns_val
       } else {
-        cat("Found n_stations but did not find unique info for",station,", cycle",cycle,"\n")
+        cat("Found n_stations but did not find unique info for stations",station,", cycle",cycle,"\n")
       }
     }
   }
@@ -1034,6 +1038,14 @@ fn_get_map_cbar <- function(map_cbar_d,c_min,c_max,score,param,par_unit){
   cmap <- scico::scico(length(brks)-1,
                        palette   = scico_pal,
                        direction = scico_dir)
+  if (param == "sc_percentage") {
+    cmap <- scico::scico(length(brks)-1,
+                         palette   = scico_pal,
+                         direction = -1,
+                         begin     = 0.25,
+                         end       = 0.75)
+    cmap[length(brks)/2] <- "white"
+  }
   
   # Then filter the cmap to just the colours which cover the range cmin-cmax
   bl <- brks[brks<c_min]
@@ -1067,17 +1079,21 @@ fn_get_map_cbar <- function(map_cbar_d,c_min,c_max,score,param,par_unit){
 
   # If we are outside the limits defined by brks, add in the extremes
   if ((!is.null(bl_val)) & (score %in% c("bias","mean_bias"))) {
-    brks_out <- c(bl_val,brks_out)
-    cmap_out <- c("darkorchid3",cmap_out)
+    if (bl_val != c_min) {
+      brks_out <- c(bl_val,brks_out)
+      cmap_out <- c("darkorchid3",cmap_out)
+    }
   }
   if (!is.null(bu_val)){
-    brks_out <- c(brks_out,bu_val)
-    if (score %in% c("bias","mean_bias")) {
-      up_col <- "hotpink2"
-    } else {
-      up_col <- "darkorchid3"
+    if (bu_val != c_max) {
+      brks_out <- c(brks_out,bu_val)
+      if (score %in% c("bias","mean_bias")) {
+        up_col <- "hotpink2"
+      } else {
+        up_col <- "darkorchid3"
+      }
+      cmap_out <- c(cmap_out,up_col)
     }
-    cmap_out <- c(cmap_out,up_col)
   }
   
   } else {
@@ -1853,7 +1869,10 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       scale_round <- 0
     }
     
-  } else if ((param %in% c("T2m","Td2m","Tmax","Tmin")) || (grepl("T2m",param,fixed=TRUE))) {
+  } else if ((param %in% c("T2m","Td2m","Tmax","Tmin")) || 
+             (grepl("T2m",param,fixed=TRUE)) || 
+             (gsub('[0-9]+$','',param) == "T") ||
+             (gsub('[0-9]+$','',param) == "Td")) {
     
     # Assuming degC as default
     if (score %in% c("bias","mean_bias")) {
@@ -1882,7 +1901,7 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       }
     }
     
-  } else if (param %in% c("Q2m")) {
+  } else if ((param %in% c("Q2m")) || (gsub('[0-9]+$','',param) == "Q")) {
     
     # Assuming g/kg as default
     if (score %in% c("bias","mean_bias")) {
@@ -1904,7 +1923,9 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       scale_round <- 4
     }
     
-  } else if ((param %in% c("S10m","Gmax","Smax","G10m")) || (grepl("S10m",param,fixed=TRUE))) {
+  } else if ((param %in% c("S10m","Gmax","Smax","G10m")) ||
+             (grepl("S10m",param,fixed=TRUE)) ||
+             (gsub('[0-9]+$','',param) == "S")) {
     
     # Assuming m/s as default
     if (score %in% c("bias","mean_bias")) {
@@ -1930,7 +1951,7 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       scale_round <- 1
     }
     
-  } else if (param %in% c("D10m")){
+  } else if ((param %in% c("D10m")) || (gsub('[0-9]+$','',param) == "D")){
     
     # Assuming degrees as default
     if (score %in% c("bias","mean_bias")){
@@ -1949,7 +1970,7 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       scale_round <- 0
     }
     
-  } else if (param %in% c("RH2m")){
+  } else if ((param %in% c("RH2m")) || (gsub('[0-9]+$','',param) == "RH")){
     
     # Assuming percent as default
     if (score %in% c("bias","mean_bias")) {
@@ -2062,6 +2083,13 @@ get_param_classes <- function(param,par_unit,score = "freq") {
       scale_round <- 0
     }
     
+  } else if (param == "sc_percentage") {
+    
+    brks         <- c(-100,-75,-50,-25,-10,-5,-1,1,5,10,25,50,75,100)
+    scale_fac    <- 1
+    scale_mult   <- T
+    scale_round  <- 0
+
   } else {
     
     cat("Need to add this parameter",param,"in break definitions. Some plots will be skipped.\n")
@@ -2190,7 +2218,7 @@ fn_scatterplot <- function(fc,
                 vlt           = vroption_list$lt_used)
   
   } else {
-    warning("Fringe case in scatter where all OBS/Forecast values are the same")
+    message("Fringe case in scatter where all OBS/Forecast values are the same")
   }
   
 }

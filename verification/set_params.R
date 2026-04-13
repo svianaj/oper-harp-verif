@@ -20,10 +20,19 @@
 params <- list(
     # Surface parameters
     T2m = list(
+      thresholds = c(-20, -10, seq(-5, 35, 5)),
+      scale_fcst = list(scaling = -273.15, new_units = "degC"),
+      scale_obs  = list(scaling = -273.15, new_units = "degC"),
+      obsmin_val = 273.15 - 50,
+      obsmax_val = 273.15 + 50,
+      error_sd   = 6,
+      models_to_scale = NULL
+    ),
+    T2m_uncorrected = list(
       thresholds = c(-20, -10, seq(-5, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
-      obsmin_val = 273.15 - 30,
+      obsmin_val = 273.15 - 50,
       obsmax_val = 273.15 + 50,
       error_sd   = 6,
       models_to_scale = NULL
@@ -32,7 +41,7 @@ params <- list(
       thresholds = c(-20, -10, seq(-5, 30, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
-      obsmin_val = 273.15 - 30,
+      obsmin_val = 273.15 - 50,
       obsmax_val = 273.15 + 50,
       error_sd   = 6
     ),
@@ -40,7 +49,7 @@ params <- list(
       thresholds = c(seq(-15, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
-      obsmin_val = 273.15 - 30,
+      obsmin_val = 273.15 - 50,
       obsmax_val = 273.15 + 50,
       error_sd   = 6
     ),
@@ -48,7 +57,7 @@ params <- list(
       thresholds = c(seq(0, 40, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
-      obsmin_val = 273.15 - 30,
+      obsmin_val = 273.15 - 50,
       obsmax_val = 273.15 + 50,
       error_sd   = 6
     ),
@@ -78,8 +87,8 @@ params <- list(
     Ps = list(
       thresholds = c(seq(920, 1040, 20)),
       scale_fcst = list(scaling =0.01, new_units = "hPa", mult= TRUE),
-      obsmin_val = 90000/100,
-      obsmax_val = 106000/100,
+      obsmin_val = 60000/100,
+      obsmax_val = 110000/100,
       error_sd   = 6,
       use_models_to_scale = FALSE
     ),
@@ -213,15 +222,20 @@ params <- list(
       scale_obs  = list(scaling = 3.281, new_units = "ft", mult = TRUE),
       error_sd   = 6,
       obsmin_val = 0,
-      obsmax_val = 24000,
-      fctmax_val = 24000
+      obsmax_val = 24000/3.281, # As filtering is done before scaling
+      fctmax_val = 24000 # Done after scaling (note Harmonie Cbase limited to 7500m)
     ),
     vis = list(
-      thresholds = c(200,500,1000,4000),
-      error_sd   = 6
+      thresholds = c(1000,2000,3000,4000,5000,7500,10000,15000,20000,25000,30000,40000),
+      error_sd   = 6,
+      obsmin_val = 0,
+      obsmax_val = 45000,
+      fctmax_val = 45000 # Note Harmonie vis limited to 50km
     ),
     # Upper-air parameters
     S = list(
+      obsmin_val = 0,
+      obsmax_val = 100,
       scale_fcst = list(scaling = 0.0, new_units = "m/s"),
       scale_obs  = list(scaling = 0.0, new_units = "m/s"),
       vc         = "pressure"
@@ -233,25 +247,35 @@ params <- list(
     Td = list(
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
+      obsmin_val = 273.15 - 105,
+      obsmax_val = 273.15 + 50,
       vc         = "pressure"
     ),
     Q = list(
       scale_fcst = list(scaling = 1000, new_units = "g/Kg", mult = TRUE),
       scale_obs  = list(scaling = 1000, new_units = "g/Kg", mult = TRUE),
+      obsmin_val = 0,
+      obsmax_val = 50/1000, # Need to divide by the scale factor as filtering is done before scaling
       vc         = "pressure"
     ),
     RH = list(
+      obsmin_val = 0,
+      obsmax_val = 100,
       scale_fcst = list(scaling = 1, new_units = "%", mult = TRUE),
       scale_obs  = list(scaling = 1, new_units = "%", mult = TRUE),
 	      
       vc         = "pressure"
     ),
     Z = list(
+      obsmin_val = 0,
+      obsmax_val = 21500, # in m
       vc         = "pressure"
     ),
     T = list(
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
+      obsmin_val = 273.15 - 85,
+      obsmax_val = 273.15 + 50,
       vc         = "pressure"
     )
 )

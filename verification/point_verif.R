@@ -33,14 +33,14 @@ if ("sf" %in% rownames(installed.packages())) {
   library(sf)
   sf_available <- T
 } else {
-  warning("sf package not found - filtering via poly files will not work and will be skipped!\n")
+  cat("sf package not found - filtering via poly files will not work and will be skipped!\n")
   sf_available <- F
 }
 if ("cowplot" %in% rownames(installed.packages())) {
   library(cowplot)
   cowplot_available <- T
 } else {
-  warning("cowplot package not found\n")
+  cat("cowplot package not found\n")
   cowplot_available <- F
 }
 
@@ -128,6 +128,10 @@ if (!interactive()) {
                       default = TRUE,
                       help    = "Use the input start/end dates in output figs/rds?
                                  If FALSE, the first/last valid fcst_dttm are used")
+  parser$add_argument("-skip_aux_plots",
+                      type    = "logical",
+                      default = FALSE,
+                      help    = "Skip the auxiliary plotting function")
   parser$add_argument("-skip_sid_verif",
                       type    = "logical",
                       default = FALSE,
@@ -150,6 +154,7 @@ if (!interactive()) {
   rolling_verif      <- args$rolling_verif
   gen_sc_only        <- args$gen_sc_only
   use_fixed_dates    <- args$use_fixed_dates
+  skip_aux_plots     <- args$skip_aux_plots
   skip_sid_verif     <- args$skip_sid_verif
   skip_thresh_verif  <- args$skip_thresh_verif
 
@@ -267,7 +272,8 @@ num_days <- as.numeric(difftime(harpCore::as_dttm(end_date),
 all_possible_UA_vars <- c("Z","T","RH","D","S","Q","Td")
 
 # Generate the the stationlists (not required, should be done offline)
-gen_station_lists <- TRUE
+#merging note: set to TRUE for DEODE
+gen_station_lists <- FALSE
 YYYY              <- substr(end_date,0,4)
 sql_file          <- file.path(obs_path,
                                paste0("OBSTABLE_",YYYY,".sqlite"))
@@ -314,8 +320,51 @@ if (params_list == "ALL") {
   cat("Verify all parameters in",params_file," (this is NOT recommended!)\n")
 } else {
   # Get rid of whitespace and split into parameters
-  params_list <- stringr::str_split_1(gsub(" ","",params_list),",")
-  params      <- params[params_list]
+  params_list <- stringr::str_split_1(gsub(" ","",params_list),",") %>% unique()
+  # Allow for single UA levels by splitting params_list into standard (i.e. 
+  # appearing explicitly in set_params file) and other parts
+  params_list_standard  <- params_list[params_list %in% names(params)]
+  params_list_UA_levels <- setdiff(params_list,params_list_standard)
+  # First get the standard params
+  params_orig <- params
+  params      <- params[params_list_standard]
+  # Remove empty entries
+  params      <- params[lapply(params,length) > 0]
+  # Save the first parameter found to use with create_station_filter
+  if (length(names(params)) > 0) {
+    param_csf <- names(params)[1]
+  } else {
+    param_csf <- NULL
+  }
+
+  # Then handle single UA_levels e.g. T925
+  if (length(params_list_UA_levels) > 0) {
+    for (ual in params_list_UA_levels) {
+      # Strip trailing level from ual
+      uav <- gsub('[0-9]+$','',ual)
+      # Does the corresponding UA variable exist in the params file?
+      if (uav %in% names(params_orig)) {
+        param_ual <- params_orig[uav]
+        names(param_ual) <- ual
+        # Remove vc if it exists
+        if (!is.null(param_ual[[ual]][["vc"]])) {
+          param_ual[[ual]][["vc"]] <- NULL
+        }
+        params <- c(params,param_ual)
+        # If param_csf is not set, do so here (to the uav value!)
+        if (is.null(param_csf)) {
+          param_csf <- uav
+        }
+      } else {
+        cat("Did not find any match for",ual,"in the parameter file\n")
+      }
+    }
+  }
+  # Check that all entries are unique
+  if ((length(names(params))) != (length(unique(names(params))))) {
+    stop("There are repeated entries in params - why did this happen?")
+  }
+  
   # Remove empty entries
   params      <- params[lapply(params,length) > 0]
   if (length(params) == 0) {
@@ -381,7 +430,7 @@ if (gen_sc_only) {
     cat("Only generating scorecard data and plotting\n")
   } else {
     cat("gen_sc_only is TRUE but create_scrd is FALSE in config - the latter has priority!\n")
-    stop("Switch create_scrd to TRUE in config")
+    silent_stop("Switch create_scrd to TRUE in config")
   }
 }
 if (length(params) == 1) {
@@ -414,9 +463,10 @@ lead_time_default <- lead_time
 # REDUCE INITIAL IO
 #================================================#
 
+# Use param_csf defined when creating "params" above
 model_domain_min <- create_station_filter(start_date,
                                           fcst_model,
-                                          names(params)[1],
+                                          param_csf,
                                           fcst_path,
                                           sl_dir)
 
@@ -522,7 +572,7 @@ run_verif <- function(prm_info, prm_name) {
                                vertical_coordinate)
     
     if (is.null(fcst_tmp)) {
-      warning("Failure during the FCTABLE reading process for ",prm_name,
+      message("Failure during the FCTABLE reading process for ",prm_name,
               ", moving on to the next parameter")
       return(missing_data)
     }
@@ -548,7 +598,7 @@ run_verif <- function(prm_info, prm_name) {
                          vertical_coordinate)
   
   if (is.null(fcst)) {
-    warning("Failure during the FCTABLE reading process for ",prm_name,
+    message("Failure during the FCTABLE reading process for ",prm_name,
             ", moving on to the next parameter")
     return(missing_data)
   }
@@ -568,7 +618,7 @@ run_verif <- function(prm_info, prm_name) {
                        vertical_coordinate)
     
     if (is.null(fcst)) {
-      warning("Failure during the model data lagging process for ",prm_name,
+      message("Failure during the model data lagging process for ",prm_name,
               ", moving on to next parameter")
       return(missing_data)
     }
@@ -642,18 +692,34 @@ run_verif <- function(prm_info, prm_name) {
   # READ OBS, SCALE, AND JOIN
   #================================================#
   
+  if (prm_name == "T2m_uncorrected") {
+    prm_name_obs <- "T2m"
+  } else {
+    prm_name_obs <- prm_name
+  }
   obs <- try_rpobs(fcst,
-                   prm_name,
+                   prm_name_obs,
                    prm_info,
                    obs_path,
                    vertical_coordinate)
+  if (prm_name_obs != prm_name) {
+    obs <- dplyr::rename(obs,!!prm_name:=all_of(prm_name_obs))
+  }
 
   if (is.null(obs)) {
-    warning("No obs found for ",prm_name,", moving on to next parameter")
+    message("No obs found for ",prm_name,", moving on to the next parameter")
     return(missing_data)
   }
   if (nrow(obs) < 1) {
-    warning("No obs found for ",prm_name,", moving on to next parameter")
+    message("No obs found for ",prm_name,", moving on to the next parameter")
+    return(missing_data)
+  }
+  # Add a check to see if all values are the same in the case of many (>100) obs.
+  # This likely indicates some sort of issue with the OBSTABLE
+  num_unique_obs = length(unique(obs[[prm_name]]))
+  if ((num_unique_obs == 1) && (nrow(obs) >= 100)) {
+    message("There are ",nrow(obs)," obverved values but they are all = ",obs[[prm_name]][1])
+    message("Check the OBSTABLE! Moving on to the next parameter")
     return(missing_data)
   }
   
@@ -665,9 +731,26 @@ run_verif <- function(prm_info, prm_name) {
              prm_info$scale_obs)
     )
   }
-  #obs  <- obs %>% mutate_list(SID = as.double(SID)) #Convert SID column 
-                    #from integer to double to protect against integer64
-  fcst <- harpCore::join_to_fcst(fcst, obs, force=TRUE)
+  
+  fcst <- tryCatch(
+    {
+      harpCore::join_to_fcst(fcst, obs)
+    },
+    error = function(cond){
+      cat("An error was detected during join_to_fcst for",prm_name,"\n")
+      cat("Here is the original message:\n")
+      message(conditionMessage(cond))
+      cat("And here is what the obs datadrame looked like:\n")
+      print(obs)
+      return(NULL)
+    }
+  )
+  if (is.null(fcst)) {
+    message("Failure during join_to_fcst for ",prm_name,
+            ", moving on to next parameter")
+    return(missing_data)
+  }
+  
   fcst <- switch(
     vertical_coordinate,
     "pressure" = harpCore::common_cases(fcst, p),
@@ -689,9 +772,22 @@ run_verif <- function(prm_info, prm_name) {
                   prm_info,
                   vertical_coordinate,
                   num_days)
+  if (is.null(fcst)) {
+    message("Failure after the QC check for parameter ",prm_name,
+            ", moving on to next parameter")
+    return(missing_data)
+  }
+  
+  # Add in one more common cases check to be safe
+  fcst <- switch(
+    vertical_coordinate,
+    "pressure" = harpCore::common_cases(fcst, p),
+    "height"   = harpCore::common_cases(fcst, z),
+    harpCore::common_cases(fcst)
+  )
   
   if (is.null(fcst)) {
-    warning("Skipping parameter ",prm_name," as fcst is empty")
+    message("Skipping parameter ",prm_name," as fcst is empty")
     return(missing_data)
   }
   
@@ -813,13 +909,13 @@ run_verif <- function(prm_info, prm_name) {
   }
   
   if (is.null(all_station_groups)) {
-    warning("No domains found, skipping parameter ",prm_name)
+    message("No domains found, skipping parameter ",prm_name)
     return(missing_data)
   } else {
     fcst <- harpCore::join_to_fcst(fcst,all_station_groups,force = TRUE)
     # Make sure something exists after joining
     if (length(fcst[[1]][["SID"]]) == 0) {
-      warning("No domain data found after joining, skipping parameter ",prm_name)
+      message("No domain data found after joining, skipping parameter ",prm_name)
       return(missing_data)
     }
   }
@@ -854,7 +950,7 @@ run_verif <- function(prm_info, prm_name) {
     #================================================#
     
     st_aux <- Sys.time()
-    if (is.na(vertical_coordinate) & (create_png)) {
+    if (is.na(vertical_coordinate) & (create_png) & (!skip_aux_plots)) {
       fn_plot_aux_scores(fcst,
                               plot_output,
                               png_projname = png_projname,
@@ -1028,7 +1124,8 @@ run_verif <- function(prm_info, prm_name) {
 #================================================#
 # CALL VERIF FUNCTION OVER ALL PARAMS
 #================================================#
-
+#DEODE changes to make the script don't stop if it fails for a parameter
+#and also store the error logs somewhere
 #verif <- purrr::imap(params, run_verif)
 
 # 1. Create a "safe" version of run_verif that never throws an error
