@@ -734,7 +734,7 @@ run_verif <- function(prm_info, prm_name) {
   
   fcst <- tryCatch(
     {
-      harpCore::join_to_fcst(fcst, obs)
+      harpCore::join_to_fcst(fcst, obs, force_join=TRUE)
     },
     error = function(cond){
       cat("An error was detected during join_to_fcst for",prm_name,"\n")
