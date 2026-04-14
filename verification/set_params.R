@@ -20,7 +20,7 @@
 params <- list(
     # Surface parameters
     T2m = list(
-      thresholds = c(-20, -10, seq(-5, 35, 5)),
+      thresholds = c(-20, -10, seq(-5, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 50,
@@ -38,7 +38,7 @@ params <- list(
       models_to_scale = NULL
     ),
     Td2m = list(
-      thresholds = c(-20, -10, seq(-5, 30, 5)),
+      thresholds = c(-20, -10, seq(-5, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 50,
@@ -46,7 +46,7 @@ params <- list(
       error_sd   = 6
     ),
     Tmin = list(
-      thresholds = c(seq(-15, 25, 5)),
+      thresholds = c(-20, -10, seq(-5, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 50,
@@ -54,7 +54,7 @@ params <- list(
       error_sd   = 6
     ),
     Tmax = list(
-      thresholds = c(seq(0, 40, 5)),
+      thresholds = c(-20, -10, seq(-5, 25, 5)),
       scale_fcst = list(scaling = -273.15, new_units = "degC"),
       scale_obs  = list(scaling = -273.15, new_units = "degC"),
       obsmin_val = 273.15 - 50,
@@ -217,7 +217,7 @@ params <- list(
       error_sd   = 6
     ),
     Cbase = list(
-      thresholds = c(100,300,1000,2000,3000,5000),
+      thresholds = c(100,500,1000,1500,2000,3000,5000,7000,10000,15000,20000),
       scale_fcst = list(scaling = 3.281, new_units = "ft", mult = TRUE),
       scale_obs  = list(scaling = 3.281, new_units = "ft", mult = TRUE),
       error_sd   = 6,
@@ -234,8 +234,6 @@ params <- list(
     ),
     # Upper-air parameters
     S = list(
-      obsmin_val = 0,
-      obsmax_val = 100,
       scale_fcst = list(scaling = 0.0, new_units = "m/s"),
       scale_obs  = list(scaling = 0.0, new_units = "m/s"),
       vc         = "pressure"
@@ -259,10 +257,10 @@ params <- list(
       vc         = "pressure"
     ),
     RH = list(
-      obsmin_val = 0,
-      obsmax_val = 100,
       scale_fcst = list(scaling = 1, new_units = "%", mult = TRUE),
       scale_obs  = list(scaling = 1, new_units = "%", mult = TRUE),
+      obsmin_val = 0,
+      obsmax_val = 100,
 	      
       vc         = "pressure"
     ),

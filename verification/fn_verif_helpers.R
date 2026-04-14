@@ -1164,7 +1164,7 @@ try_rpobs <- function(fcst,
       cat("Finished obs reading\n")
     }
   )
-  
+  obs$SID <- as.double(obs$SID)
   return(obs)
   
 }
@@ -1259,9 +1259,14 @@ fcst_qc <- function(fcst,
     min_num_stations <- stats::quantile(station_count$n,
                                         probs = .01,
                                         names = FALSE)
-    #Merging note: this was set to min(min in deode's previous
-    #merged version. Switch back to max(min to see what happens.
-    min_num_stations <- max(min_num_stations,num_days)
+    min_num_stations <- max(min_num_stations,num_days) # For a while in DEODE we used min(min here....why?
+    # If the number of stations available is quite small (e.g. <10) then do not remove
+    # any stations
+    if (nrow(station_count) < 10) {
+      min_num_stations <- 0
+      cat("Only found",nrow(station_count),
+          "stations in the dataset - skipping the 'infrequent' station check\n")
+    }
     
     sids_filter      <- station_count$SID[station_count$n >= min_num_stations]
     sids_removed     <- station_count$SID[station_count$n < min_num_stations]

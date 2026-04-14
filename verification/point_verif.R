@@ -272,8 +272,7 @@ num_days <- as.numeric(difftime(harpCore::as_dttm(end_date),
 all_possible_UA_vars <- c("Z","T","RH","D","S","Q","Td")
 
 # Generate the the stationlists (not required, should be done offline)
-#merging note: set to TRUE for DEODE
-gen_station_lists <- FALSE
+gen_station_lists <- TRUE
 YYYY              <- substr(end_date,0,4)
 sql_file          <- file.path(obs_path,
                                paste0("OBSTABLE_",YYYY,".sqlite"))
@@ -731,10 +730,12 @@ run_verif <- function(prm_info, prm_name) {
              prm_info$scale_obs)
     )
   }
+  #obs  <- obs %>% mutate_list(SID = as.double(SID)) #Convert SID column 
+                    #from integer to double to protect against integer64
   
   fcst <- tryCatch(
     {
-      harpCore::join_to_fcst(fcst, obs, force_join=TRUE)
+      harpCore::join_to_fcst(fcst, obs, force=TRUE)
     },
     error = function(cond){
       cat("An error was detected during join_to_fcst for",prm_name,"\n")
@@ -1124,8 +1125,7 @@ run_verif <- function(prm_info, prm_name) {
 #================================================#
 # CALL VERIF FUNCTION OVER ALL PARAMS
 #================================================#
-#DEODE changes to make the script don't stop if it fails for a parameter
-#and also store the error logs somewhere
+
 #verif <- purrr::imap(params, run_verif)
 
 # 1. Create a "safe" version of run_verif that never throws an error
