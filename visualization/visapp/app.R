@@ -386,18 +386,21 @@ all_det_skill_scores_lt  <- lapply(skill_scores_det,function(x) paste0(x,"-lt"))
 # Surface maps
 # Ensemble
 all_ens_map_scores       <- list("Mean Bias" = "mean_bias",
-                                 "Mean RMSE" = "rmse")
+                                 "Mean RMSE" = "rmse",
+                                 "Num. Observations" = "num_obs")
 all_ens_map_scores       <- lapply(all_ens_map_scores,function(x) paste0(x,"-mp"))
 
 # Ensemble control member
 all_ensctrl_map_scores   <- list("Bias" = "bias",
-                                 "RMSE" = "rmse")
+                                 "RMSE" = "rmse",
+                                 "Num. Observations" = "num_obs")
 all_ensctrl_map_scores   <- lapply(all_ensctrl_map_scores,function(x) paste0("ctrl",x,"-mp"))
 
 # Deterministic experiment 
-all_det_map_scores       <- list("Obs Frequency" = "obsfreq",
-                                 "Bias"          = "bias",
+all_det_map_scores       <- list("Bias"          = "bias",
                                  "RMSE"          = "rmse",
+                                 "Num. Observations" = "num_obs",
+                                 "Obs. Frequency" = "obsfreq",
                                  "Cases"         = "num_cases")
 all_det_map_scores       <- lapply(all_det_map_scores,function(x) paste0(x,"-mp"))
 
@@ -425,7 +428,7 @@ all_ensctrl_pl_scores    <- lapply(all_ensctrl_pl_scores,function(x) paste0("ctr
 all_det_pl_scores        <- list("Bias RMSE" = paste0("bias",score_sep,"rmse"))
 all_det_pl_scores        <- lapply(all_det_pl_scores,function(x) paste0(x,"-lt"))
 # Add obsfreq
-add_det_pl_scores        <- list("Obs Frequency" = "obsfreq-mp")
+add_det_pl_scores        <- list("Obs. Frequency" = "obsfreq-mp")
 all_det_pl_scores        <- c(all_det_pl_scores,add_det_pl_scores)
 
 # Profiles
@@ -573,6 +576,7 @@ ui <- shiny::tags$html(
                                               id="temptype",
                                               shiny::tabPanel("Summary"),
                                               shiny::tabPanel("Prof"),
+                                              shiny::tabPanel("Map"),
                                               shiny::tabPanel("Signif")
                                             )),
                             shiny::tabPanel(sc_tab_name)),
@@ -918,6 +922,7 @@ server <- function(input, output, session) {
         param_for_tab <- switch(input$temptype,
                                 "Summary" = all_UA_params,
                                 "Prof"    = all_UA_params,
+                                "Map"     = all_UA_params,
                                 "Signif"  = all_UA_params_signif)
       } else if (input$vartype == sc_tab_name){
         param_for_tab <- all_scorecard_params
@@ -1050,6 +1055,7 @@ server <- function(input, output, session) {
       switch(input$temptype,
              "Summary" = get(paste0("all_",mty,"_pl_scores")),
              "Prof"    = get(paste0("all_",mty,"_prof_scores")),
+             "Map"     = get(paste0("all_",mty,"_map_scores")),
              "Signif"  = get(paste0("all_",mty,"_sdiffs_scores")))
     } else if (input$vartype == sc_tab_name){
       all_scorecard_scores
@@ -1069,6 +1075,7 @@ server <- function(input, output, session) {
         switch(input$temptype,
                "Summary" = all_ensctrl_pl_scores,
                "Prof"    = all_ensctrl_prof_scores,
+               "Map"     = all_ensctrl_map_scores,
                "Signif"  = list("L" = -9999))
       } else if (input$vartype == sc_tab_name){
         list("L" = -9999)
@@ -1084,6 +1091,7 @@ server <- function(input, output, session) {
         switch(input$temptype,
                "Summary" = list("L" = -9999),
                "Prof"    = list("L" = -9999),
+               "Map"     = list("L" = -9999),
                "Signif"  = list("L" = -9999))
       } else if (input$vartype == sc_tab_name){
         list("L" = -9999)
@@ -1104,6 +1112,7 @@ server <- function(input, output, session) {
         switch(input$temptype,
                "Summary" = list("L" = -9999),
                "Prof"    = list("L" = -9999),
+               "Map"     = list("L" = -9999),
                "Signif"  = list("L" = -9999))
       } else if (input$vartype == sc_tab_name){
         list("L" = -9999)
@@ -1238,6 +1247,7 @@ server <- function(input, output, session) {
       switch(input$temptype,
              "Summary" = "Level (hPa) / Channel",
              "Prof"    = "Valid time",
+             "Map"     = "Valid time",
              "Signif"  = "New model")
     } else if (input$vartype == sc_tab_name){
       "New model"
@@ -1329,6 +1339,7 @@ server <- function(input, output, session) {
       switch(input$temptype,
              "Summary" = "Threshold",
              "Prof"    = "Threshold",
+             "Map"     = "Threshold",
              "Signif"  = "Ref model")
     } else if (input$vartype == sc_tab_name){
       "Ref model"
